@@ -1,0 +1,41 @@
+* Standalone CPU load checker
+
+* Show total cpu load by seconds
+
+  $cpu
+
+  then, it shows
+
+  <Current Frequency>, <Total>, <User>, <Nice>, <System>,
+
+
+* Show total cpu load with processes's load
+
+  $cpu <PID1> <PID2> ... <PIDn>
+
+  then, it shows
+
+  <Current Frequency>, <Total>, <User>, <Nice>, <System>,   <PID1 Total>, <PID1 User>, <PID1 System>,  <PID2 Total>, ...
+  
+
+* Control "cpu0" clock (by scaling_governor)
+
+  - Set "ondemand"
+
+    $cpu -
+
+  - Set "performance"
+
+    $cpu +
+
+
+* Show top 5  (as an ad-hoc feature)
+
+  $cpu ...
+
+  "..." is a actural string. Then high-loaded processes will be shown by each second.
+
+
+* Search PID by process' name (as an ad-hoc feature)
+
+  $cpu <keyword>
