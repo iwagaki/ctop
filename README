@@ -2,7 +2,7 @@
 
 * Show total cpu load by seconds
 
-  $cpu
+  $ctop
 
   then, it shows
 
@@ -11,7 +11,7 @@
 
 * Show total cpu load with processes's load
 
-  $cpu <PID1> <PID2> ... <PIDn>
+  $ctop <PID1> <PID2> ... <PIDn>
 
   then, it shows
 
@@ -22,20 +22,20 @@
 
   - Set "ondemand"
 
-    $cpu -
+    $ctop --ondemand
 
   - Set "performance"
 
-    $cpu +
+    $ctop --performance
 
 
 * Show top 5  (as an ad-hoc feature)
 
-  $cpu ...
+  $ctop --dynamic
 
-  "..." is a actural string. Then high-loaded processes will be shown by each second.
+  Then high-loaded processes will be shown by each second.
 
 
 * Search PID by process' name (as an ad-hoc feature)
 
-  $cpu <keyword>
+  $ctop --search <keyword>
