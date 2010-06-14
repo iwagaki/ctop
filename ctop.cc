@@ -46,19 +46,15 @@ const char*& g_pKeyword = OptionParser::createOption((const char*)0, "search", "
 
 #define PROCESS_NAME_SIZE 20
 
-struct StatTime
-{
-    StatTime() : user(0), nice(0), sys(0), idle(0)
-    {
+struct StatTime {
+    StatTime() : user(0), nice(0), sys(0), idle(0) {
     }
 
-    long long total() const
-    {
+    long long total() const {
         return user + nice + sys;
     }
 
-    void sub(StatTime& target)
-    {
+    void sub(StatTime& target) {
         user -= target.user;
         nice -= target.nice;
         sys  -= target.sys;
@@ -73,8 +69,7 @@ struct StatTime
 };
 
 
-void getProcessName(char* pProcessName, int size, char* id)
-{
+void getProcessName(char* pProcessName, int size, char* id) {
     char fileName[256];
     char procName[256];
 
@@ -87,12 +82,11 @@ void getProcessName(char* pProcessName, int size, char* id)
 
         if (fscanf(file, "Name: %255s",
                    procName // 1
-                ) != 1)
+                  ) != 1)
             VERIFY(0);
     }
 
-    if (strncmp(procName, "chrome", 256) == 0)
-    {
+    if (strncmp(procName, "chrome", 256) == 0) {
         if (snprintf(fileName, 256, "/proc/%s/cmdline", id) < 0)
             VERIFY(0);
 
@@ -108,26 +102,23 @@ void getProcessName(char* pProcessName, int size, char* id)
 
     if (size > len)
         size = len;
-        
+
     strncpy(pProcessName, &procName[len - size], len + 1);
 }
 
 
 
-class ProcStat
-{
+class ProcStat {
 public:
     virtual ~ProcStat() {}
     virtual void update() = 0;
     virtual void print() = 0;
 
-    long long total() const
-    {
+    long long total() const {
         return m_usageTime.total();
     }
 
-    const char* name() const
-    {
+    const char* name() const {
         return m_processName;
     }
 
@@ -135,8 +126,7 @@ protected:
     virtual const char* getProcFileName() = 0;
     virtual bool readCurrentStat(StatTime& time, FILE* file) = 0;
 
-    void updateStat()
-    {
+    void updateStat() {
         StatTime currentTime;
 
         getCurrentStat(currentTime);
@@ -145,13 +135,11 @@ protected:
         m_lastTime = currentTime;
     }
 
-    void getCurrentStat(StatTime& time)
-    { 
+    void getCurrentStat(StatTime& time) {
         FileReader file(getProcFileName());
 
-        if(file.fp() != 0)
-            if (readCurrentStat(time, file))
-            {
+        if (file.fp() != 0)
+            if (readCurrentStat(time, file)) {
 //                abort();
             }
     }
@@ -165,17 +153,14 @@ protected:
 
 long long ProcStat::m_progressTime = 0;
 
-bool greater(const ProcStat* lhs, const ProcStat* rhs)
-{
+bool greater(const ProcStat* lhs, const ProcStat* rhs) {
     return lhs->total() > rhs->total();
 }
 
 
-class ProcTotalStat : public ProcStat
-{
+class ProcTotalStat : public ProcStat {
 public:
-    ProcTotalStat()
-    {
+    ProcTotalStat() {
         getCurrentStat(m_lastTime);
     }
 
@@ -184,14 +169,12 @@ public:
     //     return m_usageTime.total() < rhs.total();
     // }
 
-    void update()
-    {
+    void update() {
         updateStat();
         m_progressTime = m_usageTime.total() + m_usageTime.idle;
     }
 
-    void print()
-    {
+    void print() {
         if (m_progressTime <= 0)
             printf("ROLLBACK       ,  ");
         else if (m_usageTime.user < 0)
@@ -200,8 +183,7 @@ public:
             printf("nice < 0       ,  ");
         else if (m_usageTime.sys < 0)
             printf("sys < 0        ,  ");
-        else
-        {
+        else {
             printf("%3lld,%3lld,%3lld,%3lld,  ",
                    m_usageTime.total() * 100 / m_progressTime,
                    m_usageTime.user * 100 / m_progressTime,
@@ -211,13 +193,11 @@ public:
     }
 
 private:
-    const char* getProcFileName()
-    {
+    const char* getProcFileName() {
         return "/proc/stat";
     }
 
-    bool readCurrentStat(StatTime& time, FILE* file)
-    {
+    bool readCurrentStat(StatTime& time, FILE* file) {
         char dummy[255];
 
         return (fscanf(file, "%255s %lld %lld %lld %lld",
@@ -226,16 +206,14 @@ private:
                        &time.nice, // 3
                        &time.sys, // 4
                        &time.idle // 5
-                    ) != 5);
+                      ) != 5);
     }
 };
 
 
-class ProcIdStat : public ProcStat
-{
+class ProcIdStat : public ProcStat {
 public:
-    ProcIdStat(char* id)
-    {
+    ProcIdStat(char* id) {
         getProcessName(m_processName, 20, id);
 
         if (snprintf(m_procFileName, PROC_FILE_NAME_SIZE, "/proc/%s/stat", id) < 0)
@@ -244,21 +222,18 @@ public:
         getCurrentStat(m_lastTime);
     }
 
-    void update()
-    {
+    void update() {
         updateStat();
     }
 
-    void print()
-    {
+    void print() {
         if (m_progressTime <= 0)
             printf("ROLLBACK   ,  ");
         else if (m_usageTime.user < 0)
             printf("utime < 0  ,  ");
         else if (m_usageTime.sys < 0)
             printf("sys < 0    ,  ");
-        else
-        {
+        else {
             printf("%4d,%3lld,%3lld,%3lld,  ",
                    m_usageTime.pid,
                    m_usageTime.total() * 100 / m_progressTime,
@@ -268,16 +243,14 @@ public:
     }
 
 private:
-    const char* getProcFileName()
-    {
+    const char* getProcFileName() {
         return m_procFileName;
     }
 
-    bool readCurrentStat(StatTime& time, FILE* file)
-    {
+    bool readCurrentStat(StatTime& time, FILE* file) {
         long long dummy1;
         char dummy2[256];
-    
+
         time.nice = 0;
 
         return (fscanf(file, "%d %255s %255s %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld",
@@ -296,7 +269,7 @@ private:
                        &dummy1, // 13
                        &time.user, // 14
                        &time.sys // 15
-                    ) != 15);
+                      ) != 15);
     }
 
     static const int PROC_FILE_NAME_SIZE=256;
@@ -304,8 +277,7 @@ private:
 };
 
 
-int getCpuFreq()
-{
+int getCpuFreq() {
     FileReader file("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq");
     int freq;
 
@@ -316,46 +288,39 @@ int getCpuFreq()
 }
 
 
-void setDCVS(bool isMax)
-{
+void setDCVS(bool isMax) {
     FileReader file("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 
     const char performance[] = "performance\n";
     const char ondemand[] = "ondemand\n";
 
-    if (isMax)
-    {
+    if (isMax) {
         if (fwrite(performance, 1, sizeof(performance), file) != sizeof(performance))
             VERIFY(0);
-    }
-    else
-    {
+    } else {
         if (fwrite(ondemand, 1, sizeof(ondemand), file) != sizeof(ondemand))
             VERIFY(0);
     }
 }
 
 
-void searchProcess(const char* tagName)
-{
+void searchProcess(const char* tagName) {
     // ad-hoc
 
     DIR *pDir;
     struct dirent *pEntry;
 //    char fileName[256];
     char processName[256];
-    
+
     pDir = opendir("/proc/");
- 
-    while ((pEntry = readdir(pDir)) != 0)
-    {
-        if ((pEntry->d_type == DT_DIR) && (pEntry->d_name[0] >= '0') && (pEntry->d_name[0] <= '9'))
-        {
+
+    while ((pEntry = readdir(pDir)) != 0) {
+        if ((pEntry->d_type == DT_DIR) && (pEntry->d_name[0] >= '0') && (pEntry->d_name[0] <= '9')) {
             getProcessName(processName, 256, pEntry->d_name);
 
             // if (snprintf(fileName, 256, "/proc/%s/cmdline", pEntry->d_name) < 0)
             //     VERIFY(0);
-            
+
             // FileReader file(fileName);
 
             // memset(processName, 0, 256);
@@ -364,10 +329,8 @@ void searchProcess(const char* tagName)
             {
                 char* pStr = processName;
 
-                while (strlen(pStr) >= strlen(tagName))
-                {
-                    if (strncmp(pStr, tagName, strlen(tagName)) == 0)
-                    {
+                while (strlen(pStr) >= strlen(tagName)) {
+                    if (strncmp(pStr, tagName, strlen(tagName)) == 0) {
                         printf("%s %s\n", pEntry->d_name, processName);
                     }
                     pStr++;
@@ -375,12 +338,11 @@ void searchProcess(const char* tagName)
             }
         }
     }
- 
+
     closedir(pDir);
 }
 
-void registerAllProcs(list<ProcStat*>& procList)
-{
+void registerAllProcs(list<ProcStat*>& procList) {
     // ad-hoc
 
     DIR *pDir;
@@ -389,51 +351,44 @@ void registerAllProcs(list<ProcStat*>& procList)
     pDir = opendir("/proc/");
     pid_t pid = getpid();
 
-    while ((pEntry = readdir(pDir)) != 0)
-    {
-        if ((pEntry->d_type == DT_DIR) && (pEntry->d_name[0] >= '0') && (pEntry->d_name[0] <= '9'))
-        {
+    while ((pEntry = readdir(pDir)) != 0) {
+        if ((pEntry->d_type == DT_DIR) && (pEntry->d_name[0] >= '0') && (pEntry->d_name[0] <= '9')) {
             if (atoi(pEntry->d_name) != pid)
                 procList.push_back(new ProcIdStat(pEntry->d_name));
         }
     }
- 
+
     closedir(pDir);
 }
 
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     OptionParser::parse(argc, argv);
 
-    if (g_isOndemand || g_isPerformance)
-    {
+    if (g_isOndemand || g_isPerformance) {
         VERIFY((g_isPerformance && g_isPerformance) == false)
         setDCVS(g_isPerformance);
         return 0;
     }
 
-    if (g_pKeyword != 0)
-    {
+    if (g_pKeyword != 0) {
         searchProcess(g_pKeyword);
         return 0;
     }
-    
+
     list <ProcStat*> procList;
     list <ProcStat*> dynamicProcList;
 
     procList.push_back(new ProcTotalStat);
 
-    for (vector<char*>::iterator i = OptionParser::m_argumentList.begin(); i != OptionParser::m_argumentList.end(); ++i)
-    {
+    for (vector<char*>::iterator i = OptionParser::m_argumentList.begin(); i != OptionParser::m_argumentList.end(); ++i) {
         procList.push_back(new ProcIdStat(*i));
     }
 
     if (g_isDynamic)
         registerAllProcs(dynamicProcList);
 
-    for (;;)
-    {
+    for (;;) {
         sleep(1);
 
         printf("%4d, ", getCpuFreq() / 1000);
@@ -444,16 +399,14 @@ int main(int argc, char** argv)
         for (list<ProcStat*>::iterator i = procList.begin(); i != procList.end(); ++i)
             (*i)->print();
 
-        if (g_isDynamic)
-        {
+        if (g_isDynamic) {
             for (list<ProcStat*>::iterator i = dynamicProcList.begin(); i != dynamicProcList.end(); ++i)
                 (*i)->update();
 
             dynamicProcList.sort(greater);
 
             int j = 0;
-            for (list<ProcStat*>::iterator i = dynamicProcList.begin(); i != dynamicProcList.end() && j < 5 ; ++i, j++)
-            {
+            for (list<ProcStat*>::iterator i = dynamicProcList.begin(); i != dynamicProcList.end() && j < 5 ; ++i, j++) {
                 if ((*i)->total() <= 0)
                     break;
 
